@@ -4,7 +4,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import InputMediaPhoto
 from duckduckgo import search_images_duckduckgo
 
-BOT_TOKEN = "ТВОЙ_ТОКЕН"
+BOT_TOKEN = "7217913314:AAH0jdX0YH3dpaL30nDHwxNcN-pHAsLk4fI"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
