@@ -1,29 +1,43 @@
-import asyncio
-from aiogram import Bot, Dispatcher, types
-from aiogram.enums import ParseMode
-from aiogram.types import InputMediaPhoto
-from duckduckgo import search_images_duckduckgo
+import logging
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
+from duckduckgo_search import ddg_images
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 BOT_TOKEN = "7217913314:AAH0jdX0YH3dpaL30nDHwxNcN-pHAsLk4fI"
 
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher()
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text("Привіт! Надішли мені будь-який запит, я знайду картинки.")
 
-@dp.message()
-async def handle_message(message: types.Message):
-    query = message.text.strip()
-    await message.reply("🔍 Іду шукати картинки...")
-    images = await search_images_duckduckgo(query)
-
-    if not images:
-        await message.reply("Нічого не знайшов.")
+def image_search(update: Update, context: CallbackContext):
+    query = update.message.text
+    if not query:
+        update.message.reply_text("Введи текст для пошуку картинок.")
         return
+    results = ddg_images(query, max_results=3)
+    if not results:
+        update.message.reply_text("Нічого не знайшов.")
+        return
+    for img in results:
+        update.message.bot.send_photo(chat_id=update.message.chat_id, photo=img['image'])
 
-    media = [InputMediaPhoto(url) for url in images]
-    await bot.send_media_group(chat_id=message.chat.id, media=media)
+def main():
+    updater = Updater(BOT_TOKEN)
+    dp = updater.dispatcher
 
-async def main():
-    await dp.start_polling(bot)
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("help", start))
+    dp.add_handler(CommandHandler("search", image_search))
+    dp.add_handler(CommandHandler("img", image_search))
+    dp.add_handler(CommandHandler("find", image_search))
+    dp.add_handler(CommandHandler("pic", image_search))
+    # Для звичайного тексту як пошуку
+    dp.add_handler(MessageHandler(None, image_search))
+
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
